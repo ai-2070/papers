@@ -324,4 +324,4 @@ Edited with the assistance of an AI agent. All architectural claims and design d
 
 **Dr. Laszlo Attila Vekony** is an independent researcher and engineer. He builds infrastructure for distributed AI systems, with current focus on real-time distributed AI architectures, and AI-to-physical-world integration patterns.
 
-Contact: [author contact information]
+Contact: makerseven7@gmail.com
