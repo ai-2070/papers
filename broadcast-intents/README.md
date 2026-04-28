@@ -249,17 +249,17 @@ The home agent is the central coordinator, but central coordinators can fail. Th
 
 ```mermaid
 flowchart TB
-    SD["Smoke Detector<br/>(deterministic publisher)"]
-    HA["Home Agent<br/>(may be offline)"]
-    Sub[("Substrate")]
-    Lock["Lock Vendor<br/>→ unlock exits"]
-    Light["Lighting Vendor<br/>→ brighten path"]
-    HVAC["HVAC Vendor<br/>→ shut circulation"]
-    Cam["Camera Vendor<br/>→ priority recording"]
-    Notif["Notification Vendor<br/>→ alert user, 911"]
+    SD["Smoke Detector (deterministic publisher)"]
+    HA["Home Agent (may be offline)"]
+    Sub[Substrate]
+    Lock["Lock Vendor → unlock exits"]
+    Light["Lighting Vendor → brighten path"]
+    HVAC["HVAC Vendor → shut circulation"]
+    Cam["Camera Vendor → priority recording"]
+    Notif["Notification Vendor → alert user, 911"]
 
-    SD ==>|fire intent<br/>direct publish| Sub
-    HA -.->|fire intent<br/>(if online)| Sub
+    SD ==>|"fire intent - direct publish"| Sub
+    HA -.->|"fire intent (if online)"| Sub
     Sub ==> Lock
     Sub ==> Light
     Sub ==> HVAC
