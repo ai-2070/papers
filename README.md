@@ -4,7 +4,7 @@ Research on substrate infrastructure for distributed AI systems.
 
 ## Papers
 
-[Broadcast Intents](./broadcast-intents/README.md) — Coordination between AI agents and IoT vendor systems without capability models. (April 2026)
+[Intent Broadcasts](./intent-broadcasts/README.md) — Coordination between AI agents and IoT vendor systems without capability models. (April 2026)
 
 ## License
 

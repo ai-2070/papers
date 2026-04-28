@@ -1,4 +1,4 @@
-# Broadcast Intents: Coordination Between AI Agents and IoT Vendor Systems
+# Intent Broadcasts: Coordination Between AI Agents and IoT Vendor Systems
 
 **Dr. Laszlo Attila Vekony**  
 **Pécs, Hungary**
@@ -31,7 +31,7 @@ This pattern requires the agent to maintain a *capability model* — a model of 
 
 These costs are not incidental. They are structural consequences of the capability-model pattern.
 
-## 2. Broadcast Intents
+## 2. Intent Broadcasts
 
 The pattern proposed here inverts the relationship between AI agent and capability surface.
 
@@ -45,7 +45,7 @@ When a vendor cloud receives an intent that falls within its domain, it interpre
 
 The home agent does not know which vendor clouds acted on the intent. It does not know which devices exist. It operates on two pieces of state: the intentions it can express, and the prohibitions on those intentions. Everything else is the vendor's domain.
 
-A note on terminology used throughout this paper: *home agent* refers to the user's central coordinating LLM, which receives user requests, observes household sensors, and publishes intents on the user's behalf. *Vendor cloud* refers to a vendor's existing cloud infrastructure, augmented with a broadcast-intent ingress endpoint and an interpretation layer (typically an LLM, occasionally a rules engine) that translates received intents into device commands using the vendor's proprietary protocols; *vendor LLM* refers specifically to that interpretation layer when its linguistic role is what matters. *Substrate* refers to the event medium that routes broadcast intents between scopes — any system providing scoped publication, scoped subscription, and authorization at the publication boundary suffices.
+A note on terminology used throughout this paper: *home agent* refers to the user's central coordinating LLM, which receives user requests, observes household sensors, and publishes intents on the user's behalf. *Vendor cloud* refers to a vendor's existing cloud infrastructure, augmented with a broadcast-intent ingress endpoint and an interpretation layer (typically an LLM, occasionally a rules engine) that translates received intents into device commands using the vendor's proprietary protocols; *vendor LLM* refers specifically to that interpretation layer when its linguistic role is what matters. *Substrate* refers to the event medium that routes intent broadcasts between scopes — any system providing scoped publication, scoped subscription, and authorization at the publication boundary suffices.
 
 ## 3. Architecture
 
@@ -154,7 +154,7 @@ The home agent must therefore be online whenever the household is operating. Thi
 
 ## 6. The Home Agent as Autonomous Observer
 
-The home agent's role extends beyond translating user requests into broadcast intents. The same agent can be plugged into household sensors and cameras — motion, occupancy, temperature, humidity, sound, video, smoke, water, door state, and whatever else the household carries — and act on its own perception when the situation warrants. The user is not the only source of intent. The household itself, observed through its sensors, can produce intent.
+The home agent's role extends beyond translating user requests into intent broadcasts. The same agent can be plugged into household sensors and cameras — motion, occupancy, temperature, humidity, sound, video, smoke, water, door state, and whatever else the household carries — and act on its own perception when the situation warrants. The user is not the only source of intent. The household itself, observed through its sensors, can produce intent.
 
 Examples follow naturally from the architecture. The home agent observes that the last person has left and publishes a "secure the house and reduce energy use" intent into the household scope; the lock vendor locks doors, the lighting vendor turns off lights, the HVAC vendor sets back the temperature, the security vendor arms perimeter sensors. The home agent observes a water sensor triggered in the basement and publishes a "water leak detected" emergency intent; the relevant vendor clouds respond as described in Section 9.9. The home agent learns over weeks that the user prefers the bedroom cooler than the rest of the house overnight and publishes a climate intent at the appropriate hour without being asked. The home agent observes that the dishwasher has been quietly waiting with a load for three days and publishes a "run dishwasher" intent during off-peak electricity hours.
 
@@ -195,7 +195,7 @@ The pattern proposed here differs from all three:
 
 **9.1. AI capability without on-device AI silicon.** A robot vacuum, a thermostat, a dishwasher, a light fixture — none of these need to host an LLM, an inference accelerator, or specialized AI silicon to participate in this architecture. The intelligence lives in the vendor's cloud and in the home agent. The device runs the same simple firmware it has always run, talking to its vendor's cloud through the same proprietary protocol it has always used. The vendor's cloud receives intents, decides what the device should do, and sends the device the same kind of command it would have received from the vendor's mobile app. The device is not aware that an AI is involved at all. This collapses the bill of materials that has been creeping into smart devices: no on-device inference accelerator, no large RAM allocation for model weights, no thermal envelope for sustained AI workloads, no firmware-level integration with multiple platform SDKs. A device that would otherwise cost $500 because it has to include an AI chip can be produced with equivalent functionality out of much simpler components for a fraction of the cost. The intelligence is somewhere else, and the substrate carries the conversation.
 
-**9.2. Schemaless, bidirectional, clarification-capable communication.** Tool-calling protocols require the agent and the vendor to agree on a schema in advance. Schema mismatches are fatal — the agent produces a malformed call, the tool rejects it, and there is no recovery without out-of-band schema updates. Broadcast intents carry a structured envelope (scope, domain, prohibitions, metadata) wrapping a natural-language intent payload. Both parties are LLMs capable of interpreting partial or ambiguous payloads, and either can ask for clarification at any point. The home agent can ask the vendor "can your system handle window-cleaning, or only floors?" The vendor can ask the home agent "by 'evening' do you mean before sunset or before the user's usual bedtime?" Clarification is a normal part of the conversation, not an error condition. This is the same way humans coordinate with each other through natural language — partial, recoverable, mutually clarifying — rather than through rigid contracts. It removes the schema-coordination burden that has historically made multi-vendor integration brittle.
+**9.2. Schemaless, bidirectional, clarification-capable communication.** Tool-calling protocols require the agent and the vendor to agree on a schema in advance. Schema mismatches are fatal — the agent produces a malformed call, the tool rejects it, and there is no recovery without out-of-band schema updates. Intent broadcasts carry a structured envelope (scope, domain, prohibitions, metadata) wrapping a natural-language intent payload. Both parties are LLMs capable of interpreting partial or ambiguous payloads, and either can ask for clarification at any point. The home agent can ask the vendor "can your system handle window-cleaning, or only floors?" The vendor can ask the home agent "by 'evening' do you mean before sunset or before the user's usual bedtime?" Clarification is a normal part of the conversation, not an error condition. This is the same way humans coordinate with each other through natural language — partial, recoverable, mutually clarifying — rather than through rigid contracts. It removes the schema-coordination burden that has historically made multi-vendor integration brittle.
 
 **9.3. Smaller context windows.** No tool schemas in context. The agent's context carries the user's request, the agent's reasoning, and any intent it produces — and that is all. A 200-device household imposes the same context cost as a 0-device household. Inference costs drop accordingly.
 
