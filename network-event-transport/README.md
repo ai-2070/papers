@@ -33,8 +33,8 @@ Net's central abstraction is a non-localized event bus. In brokered systems such
 This paper makes the following contributions:
 
 1. A **layered mesh architecture** (Section 3) that separates transport, identity, authorization, hierarchy, state, compute, extensibility, and resilience into composable layers, each operating at microsecond or sub-microsecond overhead.
-2. A **64-byte cache-line-aligned wire format** (Section 4) enabling zero-copy multi-hop forwarding where intermediate nodes make routing decisions from a single cache-line read without decrypting payloads.
-3. A **causal state model** (Section 6) using 24-byte causal links with compressed horizons, providing per-entity ordering without global consensus, and an honest discontinuity mechanism that forks entities with documented lineage rather than silently recovering.
+2. A **68-byte header** (Section 4) laid out for natural 8-byte-aligned reads, with its routing fast-path in the first cache line, enabling zero-copy multi-hop forwarding where intermediate nodes make routing decisions from a single cache-line read without decrypting payloads.
+3. A **causal state model** (Section 6) using 32-byte causal links with compressed horizons, providing per-entity ordering without global consensus, and an honest discontinuity mechanism that forks entities with documented lineage rather than silently recovering.
 4. A **bloom-filter authorization scheme** (Section 5.2) delivering ~20ns per-packet access control for named hierarchical channels.
 5. **Comprehensive micro-benchmarks** (Section 9) on two architectures (ARM and x86) demonstrating that the software layer is no longer the bottleneck for packet scheduling.
 
@@ -92,7 +92,7 @@ Dropping is not indiscriminate. Net distinguishes reliability by channel and wor
 
 ## 3. Architecture
 
-Net is organized into nine layers, each providing a distinct concern. All layers share a common 64-byte header format and operate within the same process. The layers are:
+Net is organized into nine layers, each providing a distinct concern. All layers share a common 68-byte header format and operate within the same process. The layers are:
 
 | Layer | Concern | Key Mechanism |
 |-------|---------|---------------|
@@ -100,7 +100,7 @@ Net is organized into nine layers, each providing a distinct concern. All layers
 | 1. Identity | Cryptographic entity binding | ed25519 keypairs, BLAKE2s-derived origin hashes |
 | 2. Channels | Named authorization endpoints | Bloom-filter AuthGuard, capability filters |
 | 3. Subnets | Hierarchical topology | 4-level 32-bit encoding, gateway enforcement |
-| 4. State | Causal distributed ordering | 24-byte CausalLinks, compressed horizons |
+| 4. State | Causal distributed ordering | 32-byte CausalLinks, compressed horizons |
 | 5. Compute | Migratable event processors | MeshDaemon trait, 6-phase migration |
 | 6. Subprotocols | Extensibility | Registry, version negotiation, opaque forwarding |
 | 7. Continuity | Observational integrity | Continuity proofs, causal cones, fork records |
@@ -116,11 +116,11 @@ The transport and runtime implementation was internally named the Blackstream La
 
 ### 4.1 Wire Format
 
-Every Net packet begins with a 64-byte header aligned to a single CPU cache line. This alignment is deliberate: a forwarding node reads one cache line, makes a routing decision, and forwards without decrypting the payload.
+Every Net packet begins with a 68-byte header, laid out so its `u64` fields sit on natural 8-byte boundaries for single-instruction reads. The fields a forwarding node needs---magic, version, flags, priority, hop limits, subprotocol and channel hashes, session/stream/sequence, origin hash, and subnet---all fall within the first 64 bytes; only `payload_len` and `event_count`, which a relay never inspects to forward, occupy the four bytes past the first cache line. A forwarding node therefore still makes its routing decision from a single cache-line read, decrements TTL, increments hop count, and forwards without decrypting the payload.
 
 ```
 Offset  Field              Size    Used by
- 0      MAGIC (0x424C)      2B     All (validation)
+ 0      MAGIC (0x4E45)      2B     All (validation)
  2      VERSION             1B     All (compatibility)
  3      FLAGS               1B     Transport (reliability, handshake)
  4      PRIORITY            1B     Router (scheduling)
@@ -133,15 +133,15 @@ Offset  Field              Size    Used by
 24      SESSION_ID          8B     Session management
 32      STREAM_ID           8B     Stream multiplexing
 40      SEQUENCE            8B     Reliability, ordering
-48      SUBNET_ID           4B     Subnet gateway
-52      ORIGIN_HASH         4B     Identity binding
-56      FRAGMENT_ID         2B     Fragmentation
-58      FRAGMENT_OFFSET     2B     Fragmentation
-60      PAYLOAD_LEN         2B     Parsing
-62      EVENT_COUNT         2B     Batch processing
+48      ORIGIN_HASH         8B     Identity binding
+56      SUBNET_ID           4B     Subnet gateway
+60      FRAGMENT_ID         2B     Fragmentation
+62      FRAGMENT_OFFSET     2B     Fragmentation
+64      PAYLOAD_LEN         2B     Parsing
+66      EVENT_COUNT         2B     Batch processing
 ```
 
-Every field is read by at least one layer. The maximum packet size is 8,192 bytes; the maximum payload is 8,096 bytes (packet minus header minus 16-byte Poly1305 tag).
+Every field is read by at least one layer. The maximum packet size is 8,192 bytes; the maximum payload is 8,108 bytes (packet minus 68-byte header minus 16-byte Poly1305 tag).
 
 ### 4.2 Encryption
 
@@ -157,7 +157,7 @@ An `AdaptiveBatcher` dynamically sizes packet batches based on observed latency 
 
 ### 4.5 Multi-Hop Forwarding
 
-The `NetProxy` forwards packets without decrypting payloads. It reads the 64-byte header, decrements TTL, increments hop count, and forwards in a single operation. Per-hop latency scales linearly: 61.7ns for 1 hop, 271.1ns for 5 hops (M1 Max; 53.4ns to 189.5ns on i9-14900K)---roughly 52ns/hop on M1 and 34ns/hop on i9. The forwarding path allocates nothing.
+The `NetProxy` forwards packets without decrypting payloads. It reads the 68-byte header, decrements TTL, increments hop count, and forwards in a single operation. Per-hop latency scales linearly: 61.7ns for 1 hop, 271.1ns for 5 hops (M1 Max; 53.4ns to 189.5ns on i9-14900K)---roughly 52ns/hop on M1 and 34ns/hop on i9. The forwarding path allocates nothing.
 
 ### 4.6 Reliability Modes
 
@@ -182,10 +182,10 @@ A heartbeat-based `FailureDetector` tracks node health with configurable timeout
 
 Every entity is identified by a 32-byte ed25519 public key. All other identifiers are deterministically derived:
 
-- **origin_hash** (4 bytes): BLAKE2s-MAC of the public key keyed with `"Net-origin-v1"`, truncated. Written into every outgoing packet header.
-- **node_id** (8 bytes): BLAKE2s-MAC keyed with `"Net-node-id-v1"`, truncated. Used in swarm routing.
+- **origin_hash** (8 bytes): BLAKE2s-MAC of the public key keyed with `"net-origin-v1"`, truncated to its low 8 bytes. Written into every outgoing packet header.
+- **node_id** (8 bytes): BLAKE2s-MAC keyed with `"net-node-id-v1"`, truncated. Used in swarm routing.
 
-Domain-separated key derivation prevents cross-domain collisions. An `OriginStamp` caches both derived values at session creation; per-packet overhead is a single u32 field write (~1ns).
+Domain-separated key derivation prevents cross-domain collisions. An `OriginStamp` caches both derived values at session creation; per-packet overhead is a single u64 field write (~1ns).
 
 **Permission tokens** are 159-byte ed25519-signed structures authorizing a subject entity to perform specific actions (publish, subscribe, admin, delegate) on specific channels. Tokens carry expiry timestamps, delegation depth limits, and unique nonces for revocation. Delegation restricts scope to the intersection of the parent's permissions with decremented depth. A `TokenCache` backed by `DashMap` provides sub-microsecond per-channel lookup. Token verification occurs at subscription time, not per-packet.
 
@@ -210,22 +210,22 @@ Total fast-path latency: ~20ns for the per-publish authorization check. Authoriz
 
 ### 6.1 Causal Links
 
-Every event produced by an entity carries a 24-byte `CausalLink`:
+Every event produced by an entity carries a 32-byte `CausalLink`:
 
 ```
-origin_hash:      4 bytes (u32)  -- entity identity
-horizon_encoded:  4 bytes (u32)  -- compressed observed horizon
+origin_hash:      8 bytes (u64)  -- entity identity
+horizon_encoded:  8 bytes (u64)  -- compressed observed horizon (64-bit bloom)
 sequence:         8 bytes (u64)  -- monotonic per-entity
 parent_hash:      8 bytes (u64)  -- xxh3(prev_link || prev_payload)
 ```
 
-Fields are ordered to avoid padding (two u32s, then two u64s). The `parent_hash` chains each event to its predecessor, providing structural integrity. Tamper resistance is provided by the transport layer's AEAD encryption.
+All four fields are 64-bit, so the 32-byte layout carries no padding. The `parent_hash` chains each event to its predecessor, providing structural integrity. Tamper resistance is provided by the transport layer's AEAD encryption.
 
 A `CausalChainBuilder` maintains per-entity chain state and produces new links. Chain validation verifies that each event's `parent_hash` matches the hash computed from the previous event's link and payload.
 
 ### 6.2 Compressed Horizons
 
-Each entity maintains an `ObservedHorizon`: a map from `origin_hash` to the latest observed sequence number from that entity. For wire transmission, the `HorizonEncoder` compresses this into a 4-byte bloom sketch using xxh3. Remote observers can perform approximate causal queries (false positives possible, false negatives impossible); local nodes with the full horizon get exact answers.
+Each entity maintains an `ObservedHorizon`: a map from `origin_hash` to the latest observed sequence number from that entity. For wire transmission, the `HorizonEncoder` compresses this into an 8-byte (64-bit) bloom sketch using xxh3. Remote observers can perform approximate causal queries (false positives possible, false negatives impossible); local nodes with the full horizon get exact answers.
 
 ### 6.3 Entity Logs
 
@@ -270,9 +270,9 @@ Phase transitions are validated; calling a transition method in the wrong phase 
 
 ### 8.1 Continuity Proofs (Layer 7)
 
-A 36-byte `ContinuityProof` demonstrates that an entity's chain is intact over a sequence range without transferring the full log. The proof contains `origin_hash`, `from_seq`, `to_seq`, and the computed `parent_hash` values at both endpoints. A verifier with the entity's log recomputes the hashes and compares.
+A 40-byte `ContinuityProof` demonstrates that an entity's chain is intact over a sequence range without transferring the full log. The proof contains `origin_hash`, `from_seq`, `to_seq`, and the computed `parent_hash` values at both endpoints. A verifier with the entity's log recomputes the hashes and compares.
 
-`CausalCone` answers causal precedence queries: given event E, which other entities' events could have causally preceded E? Local nodes with full horizons get exact answers (`Definite`/`No`); remote observers with only the 4-byte compressed horizon get approximate answers (`Possible`/`No`).
+`CausalCone` answers causal precedence queries: given event E, which other entities' events could have causally preceded E? Local nodes with full horizons get exact answers (`Definite`/`No`); remote observers with only the 8-byte compressed horizon get approximate answers (`Possible`/`No`).
 
 ### 8.2 Honest Discontinuity
 
@@ -491,7 +491,7 @@ Beyond these near-term domains, the same properties---local autonomy, bounded st
 
 **Distributed systems.** Erlang/OTP [3] provides process migration and supervision trees but over TCP with message-passing overhead. CRDTs [14] provide conflict-free replicated state but typically operate at application-level granularity without the tight integration with transport, identity, and routing that Net provides.
 
-**Causal ordering.** Vector clocks [4] and Lamport timestamps [15] are foundational. Net's compressed horizons trade exact tracking for a 4-byte wire representation via bloom sketches, providing approximate causal queries at zero per-packet cost. The honest discontinuity mechanism---forking rather than silently recovering from chain breaks---is, to our knowledge, novel in this context.
+**Causal ordering.** Vector clocks [4] and Lamport timestamps [15] are foundational. Net's compressed horizons trade exact tracking for an 8-byte wire representation via bloom sketches, providing approximate causal queries at zero per-packet cost. The honest discontinuity mechanism---forking rather than silently recovering from chain breaks---is, to our knowledge, novel in this context.
 
 **Capability systems.** Kubernetes [5] provides capability-based scheduling but at second-scale granularity over HTTP APIs. Net's capability index operates at nanosecond granularity with inline per-packet filter evaluation.
 
@@ -525,7 +525,7 @@ Net is intended for systems where participants are long-lived; state and artifac
 
 **Bloom-filter limitations.** The AuthGuard bloom filter does not support deletion; revocation relies on verified-cache eviction causing `NeedsFullCheck` failures. Under high churn, the bloom filter's false-positive rate increases until it is rebuilt.
 
-**Horizon compression.** The 4-byte bloom sketch for horizon encoding provides approximate causal queries. The false-positive rate depends on the number of observed entities. For large meshes, the approximation may become too coarse for precise causal reasoning.
+**Horizon compression.** The 8-byte bloom sketch for horizon encoding provides approximate causal queries. The false-positive rate depends on the number of observed entities. For large meshes, the approximation may become too coarse for precise causal reasoning.
 
 Future work includes wire-level benchmarks over real networks, formal verification of the partition reconciliation algorithm, WASM-based daemon sandboxing, and hardware-accelerated cryptography integration (TPM, SGX, TrustZone) for node attestation.
 
@@ -537,7 +537,7 @@ Net demonstrates that composing established distributed systems techniques---eve
 
 The central abstraction is the non-localized event bus. Conventional event buses have a location: a process (Disruptor), a broker cluster (Kafka), a data center. Net's event bus is the mesh itself. It has no broker to provision, no plaintext at relay nodes, no partition-leader bottleneck. Events exist in the ring buffers of the nodes they are passing through, for as long as they are relevant. No broker owns the data as a durable coordination point; the data is in transit unless an explicit persistence layer stores it. This is what makes processing without storage viable, and what makes the latency numbers possible: the processing path never touches disk, never queries a broker, never waits on a centralized coordinator.
 
-The 64-byte cache-line-aligned header enables zero-copy forwarding. The bloom-filter authorization scheme achieves ~20ns per-packet access control. The causal link model provides per-entity ordering in 24 bytes without global consensus. The honest discontinuity mechanism makes chain breaks visible rather than hiding them. The six-phase migration preserves causal continuity across nodes. The partition reconciliation algorithm achieves deterministic convergence without a coordination protocol.
+The 68-byte header, with its routing fast-path in the first cache line, enables zero-copy forwarding. The bloom-filter authorization scheme achieves ~20ns per-packet access control. The causal link model provides per-entity ordering in 32 bytes without global consensus. The honest discontinuity mechanism makes chain breaks visible rather than hiding them. The six-phase migration preserves causal continuity across nodes. The partition reconciliation algorithm achieves deterministic convergence without a coordination protocol.
 
 For a 5km campus, the physics floor is ~33 microseconds; for a factory floor, single-digit microseconds. When coordination is no longer dominated by broker or control-plane latency, closed-loop control across a mesh of autonomous devices, low-latency coordination between robots on a factory floor, and swarm coordination where the mesh reacts faster than any individual node's control loop become feasible. These are what becomes possible when the software coordination path gets out of the way and the dominant remaining constraints are topology, hardware, and physics.
 
