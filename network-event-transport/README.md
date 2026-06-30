@@ -1,10 +1,10 @@
 # Net: A Latency-First Encrypted Mesh Runtime for Heterogeneous Edge Computing
 
 **Dr. Laszlo Attila Vekony**  
-**Pécs, Hungary**
+**Pécs, Hungary**  
 
-**Status:** Public working draft --- Net v0.29.0 ("Summer of '69")
-**Date:** 2026-06-29
+**Status:** Public working draft --- Net v0.29.0 ("Summer of '69")  
+**Date:** 2026-06-29  
 
 *Net* is short for *Network Event Transport*.
 
