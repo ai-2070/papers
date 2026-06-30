@@ -3,14 +3,14 @@
 ### A Practical Approach to Epistemic Memory in Financial, Legal, and Geopolitical Analysis
 
 **Dr. Laszlo Attila Vekony**  
-**Pécs, Hungary**
+**Pécs, Hungary**  
 
-**Document type:** Technical whitepaper
-**Library version:** `@ai2070/memex@0.11.0`
-**Date:** 2026-06-29
-**Status:** Working draft for public release
+**Document type:** Technical whitepaper  
+**Library version:** `@ai2070/memex@0.11.0`  
+**Date:** 2026-06-29  
+**Status:** Working draft for public release  
 
-> *MemEX is a practical approach to epistemic memory for AI agents, implementing a subset of properties we have found useful in agent contexts. It is one point in a broader design space — explored separately in our forthcoming concept paper, "Epistemic Memory: A Design Space for Belief-Aware AI Memory Systems."*
+> *MemEX is a practical approach to epistemic memory for AI agents, implementing a subset of properties we have found useful in agent contexts. It is one point in a broader design space — explored separately in our forthcoming concept paper, "Epistemic Memory: A Design Space for Belief-Aware AI Memory Systems."*  
 
 ---
 
