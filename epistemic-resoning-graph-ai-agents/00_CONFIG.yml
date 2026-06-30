@@ -1,0 +1,25 @@
+# Manuscript Configuration
+# See https://github.com/HenriquesLab/rxiv-maker for full documentation
+
+title:
+  long: "Epistemic Memory: A Design Space for Belief-Aware AI Memory Systems"
+  short: "Epistemic Memory: A Design Space"
+  lead_author: "Vekony"
+
+date: "2026-06-29"
+
+authors:
+  - name: "Dr. Laszlo Attila Vekony"
+    email: "makerseven7@gmail.com"
+    affiliation: "Pécs, Hungary"
+
+keywords:
+  - epistemic memory
+  - belief representation
+  - AI memory
+  - knowledge graph
+  - provenance
+  - design space
+
+# Citation style: "numbered" for [1] or "author-date" for (Author, Year)
+citation_style: "numbered"
