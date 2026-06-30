@@ -1,0 +1,19 @@
+reliable-ai-streams-whitepaper/README.md
+  s_7b3a5852c6424c::t_29fd1f95786003 1-756
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "811ed2f0718fdb2e19d74e916b6e91273e6eafb0",
+  "prompts": {},
+  "sessions": {
+    "s_7b3a5852c6424c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9bdb8798-e4b6-4eb6-af36-63ade240a676",
+        "model": "unknown"
+      },
+      "human_author": "LZL0 <12474488+LZL0@users.noreply.github.com>"
+    }
+  }
+}
