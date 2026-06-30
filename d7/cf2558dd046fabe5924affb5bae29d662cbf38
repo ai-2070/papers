@@ -1,0 +1,49 @@
+build.py
+  s_7b3a5852c6424c::t_3bdd000edb8a6c 82-98,100,103-104,109-110
+  s_7b3a5852c6424c::t_f1d0d0aa4987d2 156
+  s_7b3a5852c6424c::t_5056ad43a1993e 232-233
+  s_7b3a5852c6424c::t_8006776f543e77 1-81,99,101-102,105-108,111-155,157-231,234-268
+epistemic-resoning-graph-ai-agents/03_REFERENCES.bib
+  s_7b3a5852c6424c::t_eb149fb8263834 1-5
+  s_7b3a5852c6424c::t_6b840e214c015c 6-8
+  s_7b3a5852c6424c::t_ffcc955b001fa8 9-16
+network-event-transport/00_CONFIG.yml
+  s_7b3a5852c6424c::t_e8ffddebf42912 4-7
+  s_7b3a5852c6424c::t_1883ee1cdf57fc 1-3,8-12,14-27
+  s_7b3a5852c6424c::t_4a2014a81d5152 13
+intent-broadcasts/03_REFERENCES.bib
+  s_7b3a5852c6424c::t_b3eef0e96c387f 1-5
+  s_7b3a5852c6424c::t_661aa24bbe77fb 6-8
+  s_7b3a5852c6424c::t_2a8bb976d69019 9-16
+intent-broadcasts/00_CONFIG.yml
+  s_7b3a5852c6424c::t_6e525a0ba9ba07 1-3,8-12,14-25
+  s_7b3a5852c6424c::t_33b6b17fbd50cd 4-7
+  s_7b3a5852c6424c::t_4c465729e807fe 13
+.gitignore
+  s_7b3a5852c6424c::t_8a5293e8b1f0c3 1-31
+network-event-transport/03_REFERENCES.bib
+  s_7b3a5852c6424c::t_2da9a1683926a1 148
+  s_7b3a5852c6424c::t_1733e3ff594144 3-5,138-147
+  s_7b3a5852c6424c::t_e4006a4e79bf64 1
+  s_7b3a5852c6424c::t_cfd97733513606 2,6-137
+epistemic-resoning-graph-ai-agents/00_CONFIG.yml
+  s_7b3a5852c6424c::t_713fb0fae49c60 1-3,8-12,14-24
+  s_7b3a5852c6424c::t_28f83eb67ba3e7 4-7
+  s_7b3a5852c6424c::t_82659ecca357b8 13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "d7cf2558dd046fabe5924affb5bae29d662cbf38",
+  "prompts": {},
+  "sessions": {
+    "s_7b3a5852c6424c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9bdb8798-e4b6-4eb6-af36-63ade240a676",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "LZL0 <12474488+LZL0@users.noreply.github.com>"
+    }
+  }
+}
