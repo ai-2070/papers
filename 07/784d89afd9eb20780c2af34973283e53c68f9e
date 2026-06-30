@@ -1,0 +1,19 @@
+epistemic-resoning-graph-ai-agents/2026__vekony_et_al__rxiv.pdf
+  s_7b3a5852c6424c::t_fee741033c9e2d 7157-7158,8267
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "07784d89afd9eb20780c2af34973283e53c68f9e",
+  "prompts": {},
+  "sessions": {
+    "s_7b3a5852c6424c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9bdb8798-e4b6-4eb6-af36-63ade240a676",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "LZL0 <12474488+LZL0@users.noreply.github.com>"
+    }
+  }
+}
