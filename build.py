@@ -34,6 +34,9 @@ REPO = Path(__file__).resolve().parent
 #   note    : markdown reinserted right after the Abstract (content that lived in
 #             the source's title block, above ## Abstract, and would otherwise be
 #             dropped along with the title/author/date header)
+#   columns : 1 (single) or 2 (two-column). Two-column clips wide tables/code, so
+#             only the prose-heavy papers are good candidates. Override per run
+#             with `python build.py <paper> --columns 2`.
 # ---------------------------------------------------------------------------
 NET_NOTE = (
     "> **Reading note.** This is a public working draft. All benchmarks measure "
@@ -62,16 +65,19 @@ PAPERS = {
         "source": "MEMEX_WHITEPAPER.md",
         "refs": False,
         "note": MEMEX_NOTE,
+        "columns": 1,  # wide tables + 118-char code lines -> needs full width
     },
     "intent-broadcasts": {
         "source": "README.md",
         "refs": False,
         "note": None,
+        "columns": 1,  # mostly prose; 2 also works well (set --columns 2 to try)
     },
     "network-event-transport": {
         "source": "README.md",
         "refs": True,
         "note": NET_NOTE,
+        "columns": 1,  # 72 table rows + wide ASCII diagrams -> needs full width
     },
 }
 
@@ -179,43 +185,104 @@ def ensure_environment() -> None:
     print("WARNING: pdflatex not found on PATH; the build will fail without LaTeX.")
 
 
-def ensure_single_column() -> None:
-    """Force rxiv's style class to single-column (idempotent).
+def find_style_cls() -> Path | None:
+    """Locate rxiv-maker's rxiv_maker_style.cls on disk.
 
-    rxiv-maker's rxiv_maker_style.cls is hardcoded to two columns, which clips
-    these papers' wide tables and ASCII diagrams off the page. We patch the
-    installed template so every build is single-column. Survives until rxiv is
-    reinstalled, at which point this re-applies the patch automatically.
+    We cannot `import rxiv_maker` here: build.py runs under the system Python,
+    but rxiv-maker is installed in an isolated uv tool venv. So search the uv
+    tool install locations directly (falling back to the import if this ever
+    does run under rxiv's interpreter).
     """
     try:
         import rxiv_maker  # noqa: F401
+
+        p = Path(rxiv_maker.__file__).parent / "tex/style/rxiv_maker_style.cls"
+        if p.exists():
+            return p
     except Exception:
+        pass
+    roots = []
+    if os.environ.get("APPDATA"):
+        roots.append(Path(os.environ["APPDATA"]) / "uv/tools")          # Windows
+    roots.append(Path.home() / ".local/share/uv/tools")                 # Linux/macOS
+    rel = "rxiv_maker/tex/style/rxiv_maker_style.cls"
+    for root in roots:
+        for pat in (f"*/Lib/site-packages/{rel}", f"*/lib/python*/site-packages/{rel}"):
+            for p in root.glob(pat):
+                return p
+    return None
+
+
+def patch_rxiv_title_dup() -> None:
+    r"""Stop rxiv rendering the auto-synced title as a spurious 'Main' section.
+
+    rxiv-maker syncs the config title into 01_MAIN.md as a leading '# ...' H1.
+    That H1 is lead content (before the first '##'), which rxiv drops only when
+    the paper also has an 'Introduction' section. For a paper whose first section
+    is something else (e.g. intent-broadcasts), the H1 instead renders as
+    `\section*{Main}` followed by a duplicate of the title. Patch the section
+    splitter to strip that leading auto-synced title from the lead content (the
+    title already comes from \maketitle). Idempotent; no-op if rxiv changes.
+    """
+    cls = find_style_cls()
+    if cls is None:
         return
-    cls = Path(rxiv_maker.__file__).parent / "tex/style/rxiv_maker_style.cls"
-    if not cls.exists():
+    sp = cls.parents[2] / "converters/section_processor.py"
+    if not sp.exists():
         return
-    text = cls.read_text(encoding="utf-8")
-    patched = text
-    patched = patched.replace(
-        "\\ExecuteOptions{times,twoside,twocolumn}",
-        "\\ExecuteOptions{times,twoside,onecolumn}",
+    text = sp.read_text(encoding="utf-8")
+    if "drop auto-synced title" in text:
+        return
+    anchor = "    main_content = content[:first_section_start].strip()\n"
+    if anchor not in text:
+        return
+    inject = anchor + (
+        "    # drop auto-synced title: rxiv injects the config title as a leading\n"
+        "    # '# ...' H1; left in the lead content it renders as a spurious 'Main'\n"
+        "    # section + duplicate title when the first section isn't 'Introduction'.\n"
+        "    main_content = re.sub(r'^<!--.*?-->\\s*', '', main_content, flags=re.DOTALL).strip()\n"
+        "    main_content = re.sub(r'^# .*(?:\\n|$)', '', main_content).strip()\n"
     )
-    patched = patched.replace(
+    sp.write_text(text.replace(anchor, inject, 1), encoding="utf-8")
+
+
+def set_columns(n: int) -> None:
+    """Patch rxiv's style class to 1 or 2 columns (idempotent).
+
+    rxiv-maker's rxiv_maker_style.cls forces two columns in two places: the
+    default in \\ExecuteOptions AND a hardcoded \\twocolumn later. Two columns
+    clip these papers' wide tables and ASCII diagrams off the page, so we drive
+    the layout from here. The hardcoded \\twocolumn is rewritten to respect the
+    class option; the option default is then set to the requested column count.
+    Re-applies automatically if rxiv is ever reinstalled.
+    """
+    cls = find_style_cls()
+    if cls is None or not cls.exists():
+        print("  WARNING: could not locate rxiv_maker_style.cls; column layout unchanged")
+        return
+    want = "twocolumn" if n == 2 else "onecolumn"
+    other = "onecolumn" if n == 2 else "twocolumn"
+    text = cls.read_text(encoding="utf-8")
+    patched = text.replace(
         "\n\\twocolumn \\sloppy \\flushbottom",
         "\n\\if@tmptwocolumn\\twocolumn\\else\\onecolumn\\fi \\sloppy \\flushbottom",
+    ).replace(
+        f"\\ExecuteOptions{{times,twoside,{other}}}",
+        f"\\ExecuteOptions{{times,twoside,{want}}}",
     )
     if patched != text:
         cls.write_text(patched, encoding="utf-8")
-        print(f"  patched rxiv style class -> single-column ({cls})")
 
 
-def build_paper(folder: str, *, keep_main: bool) -> bool:
+def build_paper(folder: str, *, keep_main: bool, columns: int | None = None) -> bool:
     cfg = PAPERS[folder]
     paper = REPO / folder
     src = paper / cfg["source"]
     if not src.exists():
         print(f"  SKIP {folder}: source {cfg['source']} not found")
         return False
+
+    set_columns(columns if columns is not None else cfg.get("columns", 1))
 
     main = paper / "01_MAIN.md"
     main.write_text(
@@ -247,6 +314,11 @@ def build_paper(folder: str, *, keep_main: bool) -> bool:
 
 def main(argv: list[str]) -> int:
     keep_main = "--keep-main" in argv
+    columns = None
+    if "--columns" in argv:
+        i = argv.index("--columns")
+        columns = int(argv[i + 1])
+        del argv[i : i + 2]
     names = [a for a in argv if not a.startswith("--")]
     targets = names or list(PAPERS)
     unknown = [t for t in targets if t not in PAPERS]
@@ -256,9 +328,9 @@ def main(argv: list[str]) -> int:
         return 2
 
     ensure_environment()
-    ensure_single_column()
+    patch_rxiv_title_dup()
     print(f"Building {len(targets)} paper(s)...")
-    results = [build_paper(t, keep_main=keep_main) for t in targets]
+    results = [build_paper(t, keep_main=keep_main, columns=columns) for t in targets]
     n_ok = sum(results)
     print(f"\nDone: {n_ok}/{len(results)} built.")
     return 0 if n_ok == len(results) else 1
