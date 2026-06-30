@@ -314,6 +314,46 @@ def patch_rxiv_title_dup() -> None:
     sp.write_text(text.replace(anchor, inject, 1), encoding="utf-8")
 
 
+def patch_rxiv_rendering() -> None:
+    r"""Idempotently patch rxiv so code blocks and ASCII diagrams render cleanly.
+
+    1. code_processor: render ALL fenced code as plain lstlisting. rxiv otherwise
+       passes e.g. language=typescript (the listings package can't load it and
+       errors), and its no-language fallback is verbatim, which does not wrap —
+       long code lines run off the page. lstlisting+arxivstyle wraps (breaklines).
+    2. md2tex: only treat lines indented <=3 spaces as markdown-table rows, so a
+       deeply-indented ASCII box diagram is not mis-detected as a table (which
+       leaks an 'XXPROTECTEDMARKDOWNTABLEXX' placeholder into the output).
+
+    Done as small substring swaps: they no-op once applied and re-apply by
+    themselves if rxiv is reinstalled.
+    """
+    cls = find_style_cls()
+    if cls is None:
+        return
+    pkg = cls.parents[2]
+    edits = {
+        "converters/code_processor.py": [
+            ("[style=arxivstyle,language={language}]", "[style=arxivstyle]"),
+            ("begin{{verbatim}}", "begin{{lstlisting}}[style=arxivstyle]"),
+            ("end{{verbatim}}", "end{{lstlisting}}"),
+        ],
+        "converters/md2tex.py": [
+            (r"[ \t]*\|.*\|[ \t]*$", r"[ \t]{0,3}\|.*\|[ \t]*$"),
+        ],
+    }
+    for rel, subs in edits.items():
+        path = pkg / rel
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8")
+        new = text
+        for old, repl in subs:
+            new = new.replace(old, repl)
+        if new != text:
+            path.write_text(new, encoding="utf-8")
+
+
 def set_columns(n: int) -> None:
     """Patch rxiv's style class to 1 or 2 columns (idempotent).
 
@@ -397,6 +437,7 @@ def main(argv: list[str]) -> int:
 
     ensure_environment()
     patch_rxiv_title_dup()
+    patch_rxiv_rendering()
     print(f"Building {len(targets)} paper(s)...")
     results = [build_paper(t, keep_main=keep_main, columns=columns) for t in targets]
     n_ok = sum(results)
