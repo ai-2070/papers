@@ -60,8 +60,16 @@ MEMEX_NOTE = (
     "Belief-Aware AI Memory Systems.\"*"
 )
 
+L0_NOTE = (
+    "**A reliability + observability layer for token streams**\n\n"
+    "> LLMs produce high-value reasoning over a low-integrity transport layer. "
+    "Streams stall, drop tokens, reorder events, violate timing guarantees, and "
+    "expose no deterministic contract. L0 fixes the transport so you can build "
+    "reliable systems on top of any AI stream."
+)
+
 PAPERS = {
-    "epistemic-resoning-graph-ai-agents": {
+    "memex-epistemic-reasoning-graph": {
         "source": "MEMEX_WHITEPAPER.md",
         "refs": False,
         "note": MEMEX_NOTE,
@@ -71,7 +79,7 @@ PAPERS = {
         "source": "README.md",
         "refs": False,
         "note": None,
-        "columns": 2,  # prose-heavy, no wide tables -> clean two-column fit
+        "columns": 1,  # prose fits 2-col, but its sequence diagrams are too wide
     },
     "network-event-transport": {
         "source": "README.md",
@@ -79,49 +87,104 @@ PAPERS = {
         "note": NET_NOTE,
         "columns": 1,  # 72 table rows + wide ASCII diagrams -> needs full width
     },
+    "reliable-ai-streams-whitepaper": {
+        "source": "README.md",
+        "refs": False,
+        "note": L0_NOTE,
+        "columns": 1,  # TS code blocks + benchmark tables -> single-column
+    },
 }
 
 
 # ---------------------------------------------------------------------------
 # Markdown -> rxiv 01_MAIN.md transform
 # ---------------------------------------------------------------------------
-SPECIALS = {"_": r"\_", "$": r"\$", "~": r"\textasciitilde{}"}
-
-
 def escape_latex_specials(line: str, in_table: bool) -> str:
     r"""Escape literal LaTeX specials that rxiv leaves raw in prose/tables.
 
     rxiv's markdown->LaTeX converter does not escape several characters that are
-    special to LaTeX. The effect is either a run-on that clips off the page (an
-    unescaped `_` or `$` opens subscript/math mode and swallows the following
-    spaces, e.g. io_uring or "$500 ...") or a silent mis-render (`~`, meant as
-    "approximately", becomes a non-breaking space). None of these papers use
-    $...$ math or _italic_ emphasis, so every such character is literal:
+    special to LaTeX, which either clips a paragraph off the page (an unescaped
+    `_` or `$` opens subscript/math mode and swallows following spaces, e.g.
+    io_uring or "$500 ...") or silently mis-renders (`~`, meant as
+    "approximately", becomes a non-breaking space):
 
         _  ->  \_        $  ->  \$        ~  ->  \textasciitilde{}
 
-    - table rows  : escape everywhere (rxiv won't, even inside backticks here)
-    - other lines : escape only OUTSIDE `backtick` spans (rxiv handles those)
+    Markdown _italic_ emphasis is rewritten to *italic* (rxiv only italicizes
+    *...*, NOT _..._ — it leaves those underscores literal, which breaks LaTeX);
+    every remaining underscore is then a literal (an identifier like io_uring, or
+    a lone _) and is escaped. `$`, `~`, `&`, `%` are always literal here (no $...$
+    math, no tabular & — an unescaped % in a cell eats the rest of the table row).
+    rxiv already escapes prose `code spans`, so we only rewrite code spans inside
+    table rows (where rxiv does not escape).
     """
-    if not any(c in line for c in SPECIALS):
-        return line
-    if in_table:
-        return "".join(SPECIALS.get(ch, ch) for ch in line)
-    out, in_code = [], False
-    for ch in line:
-        if ch == "`":
-            in_code = not in_code
-            out.append(ch)
-        elif ch in SPECIALS and not in_code:
-            out.append(SPECIALS[ch])
+    if not any(c in line for c in "_$~&%@"):
+        return line  # @ kept so table-cell package names can be de-cited below
+
+    def esc(text: str) -> str:
+        # underscore emphasis -> asterisk (rxiv italicizes *...*, not _..._)
+        text = re.sub(r"(?<![A-Za-z0-9_])_(?!_)([^_\n]+?)_(?![A-Za-z0-9_])", r"*\1*", text)
+        # remaining underscores are literal (identifiers / lone) -> escape all
+        text = text.replace("_", "\\_")
+        text = text.replace("$", r"\$").replace("~", r"\textasciitilde{}")
+        # & (tabular alignment) and % (comment) are literal in prose/table cells;
+        # unescaped % in a table cell eats the rest of the row and breaks the table
+        return text.replace("&", r"\&").replace("%", r"\%")
+
+    out = []
+    for part in re.split(r"(`[^`]*`)", line):
+        is_code = len(part) >= 2 and part.startswith("`") and part.endswith("`")
+        if is_code and not in_table:
+            out.append(part)  # prose code span: rxiv already escapes it
+        elif is_code:
+            inner = esc(part[1:-1])
+            # neutralize @pkg so rxiv's citation parser doesn't turn a package
+            # name (e.g. @ai2070/l0) in a table cell into a spurious citation
+            # (the empty group is invisible inside \texttt{})
+            inner = re.sub(r"@(?=[A-Za-z])", "@{}", inner)
+            out.append("`" + inner + "`")  # table code span: rxiv won't
         else:
-            out.append(ch)
+            out.append(esc(part))
     return "".join(out)
+
+
+# Non-ASCII chars LaTeX's inputenc does not define -> ASCII equivalents, so
+# verbatim/prose don't error: box-drawing art plus the Unicode minus sign.
+_BOX_DRAWING = {
+    0x2212: "-",  # MINUS SIGN (distinct from ASCII hyphen) -> "-"
+    0x2500: "-", 0x2501: "-", 0x2502: "|", 0x2503: "|",
+    0x250C: "+", 0x250D: "+", 0x250E: "+", 0x250F: "+",
+    0x2510: "+", 0x2511: "+", 0x2512: "+", 0x2513: "+",
+    0x2514: "+", 0x2515: "+", 0x2516: "+", 0x2517: "+",
+    0x2518: "+", 0x2519: "+", 0x251A: "+", 0x251B: "+",
+    0x251C: "+", 0x2520: "+", 0x2524: "+", 0x2528: "+",
+    0x252C: "+", 0x2530: "+", 0x2534: "+", 0x2538: "+", 0x253C: "+",
+    0x2550: "=", 0x2551: "|", 0x2554: "+", 0x2557: "+",
+    0x255A: "+", 0x255D: "+", 0x2560: "+", 0x2563: "+",
+    0x2566: "+", 0x2569: "+", 0x256C: "+",
+}
+
+# Inside code blocks (rendered with listings, which only accepts ASCII), map the
+# "smart" typography Markdown introduced back to plain ASCII — code examples
+# should use straight quotes/dashes anyway. Applied to fenced lines only, so
+# prose keeps its proper em-dashes and curly quotes.
+_CODE_ASCII = {
+    0x2018: "'", 0x2019: "'", 0x201C: '"', 0x201D: '"',  # curly quotes
+    0x2013: "-", 0x2014: "--", 0x2026: "...",            # dashes, ellipsis
+    0x00B7: ".", 0x2022: "*", 0x00A0: " ",               # middle dot, bullet, nbsp
+    0x2192: "->", 0x2190: "<-", 0x00D7: "x", 0x00A7: "S",
+}
+
+
+def _code_to_ascii(line: str) -> str:
+    """Make a code-block line safe for the listings package (ASCII only)."""
+    line = line.translate(_CODE_ASCII)
+    return line.encode("ascii", "replace").decode("ascii")  # net: rare leftovers -> ?
 
 
 def transform(source_text: str, *, refs: bool, note: str | None) -> str:
     """Produce rxiv 01_MAIN.md body from the source markdown."""
-    lines = source_text.splitlines()
+    lines = source_text.translate(_BOX_DRAWING).splitlines()
 
     # 1. Body starts at the first "## Abstract" (title/author/date header -> config).
     start = next(
@@ -151,11 +214,16 @@ def transform(source_text: str, *, refs: bool, note: str | None) -> str:
     out, in_fence = [], False
     for ln in body:
         if ln.lstrip().startswith("```"):
+            if not in_fence:
+                # Drop the language tag (e.g. ```typescript): listings has no such
+                # language. build.py patches rxiv to render all code as plain
+                # lstlisting, but this keeps an un-patched rxiv from erroring too.
+                ln = re.sub(r"^(\s*```)[\w+-]*\s*$", r"\1", ln)
             in_fence = not in_fence
             out.append(ln)
             continue
         if in_fence:
-            out.append(ln)
+            out.append(_code_to_ascii(ln))  # listings only accepts ASCII
             continue
         if refs:
             ln = re.sub(r"\[(\d+)\]", r"[@ref\1]", ln)

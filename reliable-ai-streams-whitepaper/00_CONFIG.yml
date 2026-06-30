@@ -1,0 +1,26 @@
+# Manuscript Configuration
+# See https://github.com/HenriquesLab/rxiv-maker for full documentation
+
+title:
+  long: "L0: Reliable AI Streams"
+  short: "L0: Reliable AI Streams"
+  lead_author: "Vekony"
+
+date: "2025-12-01"
+
+authors:
+  - name: "Dr. Laszlo Attila Vekony"
+    email: "makerseven7@gmail.com"
+    affiliation: "Sopron, Hungary"
+
+keywords:
+  - LLM streaming
+  - reliability
+  - deterministic replay
+  - guardrails
+  - drift detection
+  - event sourcing
+  - observability
+
+# Citation style: "numbered" for [1] or "author-date" for (Author, Year)
+citation_style: "numbered"

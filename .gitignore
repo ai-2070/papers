@@ -7,6 +7,7 @@
 
 # rxiv build output directory (PDF, .tex, .aux, .log, .bbl, etc.)
 */output/
+*/.rxiv_cache/
 
 # The PDF copy rxiv drops in each paper folder root
 # */2026__*.pdf
