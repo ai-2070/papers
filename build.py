@@ -75,6 +75,12 @@ PAPERS = {
         "note": MEMEX_NOTE,
         "columns": 1,  # wide tables + 118-char code lines -> needs full width
     },
+    "epistemic-resoning-graph-ai-agents": {
+        "source": "README.md",
+        "refs": False,  # manual numbered reference list, no inline [N] markers
+        "note": None,
+        "columns": 1,
+    },
     "intent-broadcasts": {
         "source": "README.md",
         "refs": False,
@@ -152,6 +158,7 @@ def escape_latex_specials(line: str, in_table: bool) -> str:
 # verbatim/prose don't error: box-drawing art plus the Unicode minus sign.
 _BOX_DRAWING = {
     0x2212: "-",  # MINUS SIGN (distinct from ASCII hyphen) -> "-"
+    0x2605: "-star",  # BLACK STAR -> the "RDF-star"/"SPARQL-star" notation
     0x2500: "-", 0x2501: "-", 0x2502: "|", 0x2503: "|",
     0x250C: "+", 0x250D: "+", 0x250E: "+", 0x250F: "+",
     0x2510: "+", 0x2511: "+", 0x2512: "+", 0x2513: "+",
