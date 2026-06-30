@@ -2,7 +2,7 @@
 
 Research on substrate infrastructure for distributed AI systems.
 
-## Papers
+## List of Papers
 
 [Network Event Transport](./network-event-transport/README.md) — A Latency-First Encrypted Mesh Runtime for Heterogeneous Edge Computing. (June 2026)  
 [Epistemic Memory](./epistemic-resoning-graph-ai-agents/README.md) — A Design Space for Belief-Aware AI Memory Systems. (June 2026)  
