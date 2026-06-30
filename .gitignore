@@ -9,8 +9,8 @@
 */output/
 
 # The PDF copy rxiv drops in each paper folder root
-*/2026__*.pdf
-*/*__*_et_al__*.pdf
+# */2026__*.pdf
+# */*__*_et_al__*.pdf
 
 # PDF preview renders
 */output/_preview*.png
