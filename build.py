@@ -71,7 +71,7 @@ PAPERS = {
         "source": "README.md",
         "refs": False,
         "note": None,
-        "columns": 1,  # mostly prose; 2 also works well (set --columns 2 to try)
+        "columns": 2,  # prose-heavy, no wide tables -> clean two-column fit
     },
     "network-event-transport": {
         "source": "README.md",
