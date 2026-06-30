@@ -1,0 +1,20 @@
+build.py
+  s_7b3a5852c6424c::t_0cd0d3a8106eb5 78-83
+  s_7b3a5852c6424c::t_c29e28df1231dd 161
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "f3bf896395952de60f1f0adf555a950a51586478",
+  "prompts": {},
+  "sessions": {
+    "s_7b3a5852c6424c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9bdb8798-e4b6-4eb6-af36-63ade240a676",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "LZL0 <12474488+LZL0@users.noreply.github.com>"
+    }
+  }
+}
