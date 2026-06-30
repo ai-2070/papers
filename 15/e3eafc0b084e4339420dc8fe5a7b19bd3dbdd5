@@ -1,0 +1,22 @@
+epistemic-resoning-graph-ai-agents/03_REFERENCES.bib
+  s_7b3a5852c6424c::t_1458a8c9db4b8b 6-16
+  s_7b3a5852c6424c::t_4df067fe7a4213 1-5
+epistemic-resoning-graph-ai-agents/00_CONFIG.yml
+  s_7b3a5852c6424c::t_fe5a57615b13f0 1-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "15e3eafc0b084e4339420dc8fe5a7b19bd3dbdd5",
+  "prompts": {},
+  "sessions": {
+    "s_7b3a5852c6424c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9bdb8798-e4b6-4eb6-af36-63ade240a676",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "LZL0 <12474488+LZL0@users.noreply.github.com>"
+    }
+  }
+}
