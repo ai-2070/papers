@@ -1,9 +1,9 @@
 # Intent Broadcasts: Coordination Between AI Agents and IoT Vendor Systems
 
 **Dr. Laszlo Attila Vekony**  
-**Pécs, Hungary**
+**Pécs, Hungary**  
 
-*April 28, 2026.*
+*April 28, 2026.*  
 
 ---
 
