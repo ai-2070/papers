@@ -1,0 +1,27 @@
+# Manuscript Configuration
+# See https://github.com/HenriquesLab/rxiv-maker for full documentation
+
+title:
+  long: "Net: A Latency-First Encrypted Mesh Runtime for Heterogeneous Edge Computing"
+  short: "Net: A Latency-First Mesh Runtime"
+  lead_author: "Vekony"
+
+date: "2026-06-29"
+
+authors:
+  - name: "Dr. Laszlo Attila Vekony"
+    email: "makerseven7@gmail.com"
+    affiliation: "Pécs, Hungary"
+
+keywords:
+  - mesh networking
+  - non-localized event bus
+  - edge computing
+  - causal ordering
+  - zero-copy forwarding
+  - capability-based routing
+  - encrypted transport
+  - partition healing
+
+# Citation style: "numbered" for [1] or "author-date" for (Author, Year)
+citation_style: "numbered"

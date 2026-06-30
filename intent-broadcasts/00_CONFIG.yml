@@ -1,0 +1,25 @@
+# Manuscript Configuration
+# See https://github.com/HenriquesLab/rxiv-maker for full documentation
+
+title:
+  long: "Intent Broadcasts: Coordination Between AI Agents and IoT Vendor Systems"
+  short: "Intent Broadcasts"
+  lead_author: "Vekony"
+
+date: "2026-04-28"
+
+authors:
+  - name: "Dr. Laszlo Attila Vekony"
+    email: "makerseven7@gmail.com"
+    affiliation: "Pécs, Hungary"
+
+keywords:
+  - AI agents
+  - intent broadcasting
+  - IoT
+  - smart home
+  - capability models
+  - cloud-to-cloud integration
+
+# Citation style: "numbered" for [1] or "author-date" for (Author, Year)
+citation_style: "numbered"

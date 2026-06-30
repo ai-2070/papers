@@ -1,0 +1,24 @@
+# Manuscript Configuration
+# See https://github.com/HenriquesLab/rxiv-maker for full documentation
+
+title:
+  long: "MemEX: An Epistemic Reasoning Graph for AI Agents"
+  short: "MemEX: An Epistemic Reasoning Graph"
+  lead_author: "Vekony"
+
+date: "2026-06-29"
+
+authors:
+  - name: "Dr. Laszlo Attila Vekony"
+    email: "makerseven7@gmail.com"
+    affiliation: "Pécs, Hungary"
+
+keywords:
+  - epistemic memory
+  - AI agents
+  - knowledge graph
+  - provenance
+  - belief representation
+
+# Citation style: "numbered" for [1] or "author-date" for (Author, Year)
+citation_style: "numbered"

@@ -1,0 +1,31 @@
+# --- rxiv-maker build artifacts ---------------------------------------------
+
+# Generated body file: build.py derives 01_MAIN.md from the source markdown
+# (README.md / MEMEX_WHITEPAPER.md) on every build, then deletes it. It should
+# never be committed — the source markdown + 00_CONFIG.yml are the truth.
+*/01_MAIN.md
+
+# rxiv build output directory (PDF, .tex, .aux, .log, .bbl, etc.)
+*/output/
+
+# The PDF copy rxiv drops in each paper folder root
+*/2026__*.pdf
+*/*__*_et_al__*.pdf
+
+# PDF preview renders
+*/output/_preview*.png
+*/_preview*.png
+
+# --- stray LaTeX aux files (if any are ever produced outside output/) -------
+*.aux
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.out
+*.toc
+
+# --- python ----------------------------------------------------------------
+__pycache__/
+*.pyc
