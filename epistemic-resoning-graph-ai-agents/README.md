@@ -1,11 +1,11 @@
 # Epistemic Memory: A Design Space for Belief-Aware AI Memory Systems
 
 **Dr. Laszlo Attila Vekony**  
-**Pécs, Hungary**
+**Pécs, Hungary**  
 
-**Document type:** Concept paper / position paper
-**Status:** Working draft for public release
-**Date:** 2026-06-29
+**Document type:** Concept paper / position paper  
+**Status:** Working draft for public release  
+**Date:** 2026-06-29  
 
 ---
 
