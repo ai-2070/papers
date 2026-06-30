@@ -314,6 +314,22 @@ def patch_rxiv_title_dup() -> None:
     sp.write_text(text.replace(anchor, inject, 1), encoding="utf-8")
 
 
+# rxiv protects `backtick` spans before it hides code blocks, so backticks inside
+# code (e.g. TS template literals) get protected and never restored — leaking an
+# XXPROTECTEDBACKTICK placeholder. This makes the protection skip code blocks.
+_BT_OLD = r'''    content = re.sub(r"``[^`]+``", protect_backtick_content_func, content)  # Double backticks first
+    content = re.sub(r"`[^`]+`", protect_backtick_content_func, content)  # Then single backticks'''
+_BT_NEW = r'''    _segments = re.split(
+        r"(\\begin\{(?:lstlisting|verbatim)\}.*?\\end\{(?:lstlisting|verbatim)\})",
+        content,
+        flags=re.DOTALL,
+    )
+    for _i in range(0, len(_segments), 2):  # even indices are outside code blocks
+        _segments[_i] = re.sub(r"``[^`]+``", protect_backtick_content_func, _segments[_i])
+        _segments[_i] = re.sub(r"`[^`]+`", protect_backtick_content_func, _segments[_i])
+    content = "".join(_segments)'''
+
+
 def patch_rxiv_rendering() -> None:
     r"""Idempotently patch rxiv so code blocks and ASCII diagrams render cleanly.
 
@@ -340,6 +356,7 @@ def patch_rxiv_rendering() -> None:
         ],
         "converters/md2tex.py": [
             (r"[ \t]*\|.*\|[ \t]*$", r"[ \t]{0,3}\|.*\|[ \t]*$"),
+            (_BT_OLD, _BT_NEW),
         ],
     }
     for rel, subs in edits.items():
